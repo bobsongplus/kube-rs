@@ -2,7 +2,8 @@ use kube::core::{
     admission::{AdmissionRequest, AdmissionResponse, AdmissionReview},
     DynamicObject, Resource, ResourceExt,
 };
-use std::{convert::Infallible, error::Error};
+use jsonptr::Pointer;
+use std::{convert::Infallible, error::Error, str::FromStr};
 use tracing::*;
 use warp::{reply, Filter, Reply};
 
@@ -75,13 +76,13 @@ fn mutate(res: AdmissionResponse, obj: &DynamicObject) -> Result<AdmissionRespon
         // Ensure labels exist before adding a key to it
         if obj.meta().labels.is_none() {
             patches.push(json_patch::PatchOperation::Add(json_patch::AddOperation {
-                path: "/metadata/labels".into(),
+               path: Pointer::from_str("/metadata/labels").map_err(|_err|Error::InvalidFinalizer)?,
                 value: serde_json::json!({}),
             }));
         }
         // Add our label
         patches.push(json_patch::PatchOperation::Add(json_patch::AddOperation {
-            path: "/metadata/labels/admission".into(),
+            path: Pointer::from_str("/metadata/labels/admission").map_err(|_err|Error::InvalidFinalizer)?,
             value: serde_json::Value::String("modified-by-admission-controller".into()),
         }));
         Ok(res.with_patch(json_patch::Patch(patches))?)
