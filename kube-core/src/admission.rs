@@ -223,11 +223,14 @@ pub enum Operation {
 ///     .into_review();
 ///
 /// use json_patch::{AddOperation, Patch, PatchOperation};
+/// use kube::runtime::finalizer;
+/// use jsonptr::Pointer;
+/// use std::str::FromStr;
 ///
 /// // A response adding a label to the resource.
 /// let _: AdmissionReview<_> = AdmissionResponse::from(&req)
 ///     .with_patch(Patch(vec![PatchOperation::Add(AddOperation {
-///         path: "/metadata/labels/my-label".to_owned(),
+///         path: Pointer::from_str("/metadata/labels/my-label").map_err(|_err| finalizer::Error::InvalidFinalizer)?,
 ///         value: serde_json::Value::String("my-value".to_owned()),
 ///     })]))
 ///     .unwrap()
